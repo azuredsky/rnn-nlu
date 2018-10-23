@@ -19,9 +19,9 @@ from tensorflow.python.framework import tensor_shape
 from tensorflow.contrib.legacy_seq2seq import sequence_loss_by_example
 from tensorflow.contrib.legacy_seq2seq import sequence_loss
 
-from tensorflow.python.ops import rnn_cell_impl
+#from tensorflow.python.ops import rnn_cell_impl
 
-linear = rnn_cell_impl._linear
+#linear = rnn_cell_impl._linear
 
 def _step(time, sequence_length, min_sequence_length, 
           max_sequence_length, zero_logit, generate_logit):
@@ -92,7 +92,8 @@ def attention_RNN(encoder_outputs,
         for i in xrange(num_heads):
           with tf.variable_scope("Attention_%d" % i):
             #y = linear(query, attention_vec_size, True)
-            y = linear(query, attention_vec_size, True)
+            #y = linear(query, attention_vec_size, True) v1.0
+            y = tf.layers.Dense(units=attention_vec_size)(query)
             y = tf.reshape(y, [-1, 1, 1, attention_vec_size])
             # Attention mask is a softmax of v^T * tanh(...).
             s = tf.reduce_sum(
@@ -120,14 +121,16 @@ def attention_RNN(encoder_outputs,
           tf.get_variable_scope().reuse_variables()
         if i == 0:
           with tf.variable_scope("Initial_Decoder_Attention"):
-            initial_state = linear(encoder_state, output_size, True)
+            #initial_state = linear(encoder_state, output_size, True)
+            initial_state= tf.layers.Dense(units=output_size)(encoder_state)
           attn_weights, ds = attention(initial_state)
         else:
           attn_weights, ds = attention(encoder_outputs[i])
         output = tf.concat([ds[0], encoder_outputs[i]], 1) 
         # NOTE: here we temporarily assume num_head = 1
         with tf.variable_scope("AttnRnnOutputProjection"):
-          logit = linear(output, num_decoder_symbols, True)
+          #logit = linear(output, num_decoder_symbols, True)
+          logit = tf.layers.Dense(units=num_decoder_symbols)(output)
         attention_encoder_outputs.append(logit) 
         # NOTE: here we temporarily assume num_head = 1
         sequence_attention_weights.append(attn_weights[0]) 
@@ -166,9 +169,10 @@ def attention_RNN(encoder_outputs,
           #reuse = True
         # pylint: disable=cell-var-from-loop
         # call_cell = lambda: cell(input_, state)
-        generate_logit = lambda: linear(encoder_outputs[time], 
-                                        num_decoder_symbols, 
-                                        True)
+        # generate_logit = lambda: linear(encoder_outputs[time], 
+                                        # num_decoder_symbols, 
+                                        # True)
+          generate_logit = lambda:  tf.layers.Dense(units=num_decoder_symbols)(encoder_outputs[time])
         # pylint: enable=cell-var-from-loop
         if sequence_length is not None:
           logit = _step(time, sequence_length, min_sequence_length, 

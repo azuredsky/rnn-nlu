@@ -12,9 +12,9 @@ from __future__ import print_function
 from six.moves import xrange  # pylint: disable=redefined-builtin
 # We disable pylint because we need python3 compatibility.
 import tensorflow as tf
-from tensorflow.python.ops import rnn_cell_impl
+#from tensorflow.python.ops import rnn_cell_impl
 
-linear = rnn_cell_impl._linear
+#linear = rnn_cell_impl._linear
 
 def attention_single_output_decoder(initial_state, 
                                     attention_states,
@@ -61,7 +61,8 @@ def attention_single_output_decoder(initial_state,
       for i in xrange(num_heads):
         with tf.variable_scope("Attention_%d" % i):
           # y = linear(query, attention_vec_size, True)
-          y = linear(query, attention_vec_size, True)
+          #y = linear(query, attention_vec_size, True)
+          y = tf.layers.Dense(units=attention_vec_size)(query)
           y = tf.reshape(y, [-1, 1, 1, attention_vec_size])
           # Attention mask is a softmax of v^T * tanh(...).
           s = tf.reduce_sum(
